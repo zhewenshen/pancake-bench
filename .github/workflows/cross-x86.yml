@@ -50,19 +50,19 @@ jobs:
     - name: build c version for x86
       run: |
         cd build
-        make dijkstra-c
+        make mibench-dijkstra-c
     
     - name: build pancake version for x86
       run: |
         cd build
-        make dijkstra-pancake
+        make mibench-dijkstra-pancake
     
     - name: verify x86 binaries and test execution
       run: |
-        cd build/bin/network/dijkstra
-        file dijkstra-c dijkstra-pancake
+        cd build/bin/mibench-dijkstra
+        file mibench-dijkstra-c mibench-dijkstra-pancake
         echo "testing c version execution:"
-        timeout 10 ./dijkstra-c input.dat > /dev/null
+        timeout 10 ./mibench-dijkstra-c input.dat > /dev/null
         echo "testing pancake version execution:"
-        timeout 10 ./dijkstra-pancake input.dat > /dev/null
+        timeout 10 ./mibench-dijkstra-pancake input.dat > /dev/null
         echo -e "\033[32msuccess: x86 cross compilation and execution completed\033[0m"

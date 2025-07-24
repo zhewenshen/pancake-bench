@@ -1,3 +1,12 @@
+## Overview
+- This is a very much work in progress project.
+- The original plan was to port over ["MiBench"](https://github.com/embecosm/mibench) to Pancake so that we can have a comparison and analysis against GCC and CompCert using some known and established benchmarking suite.
+- However, due to the complexity of the "Mibench" source code, and the limitations of the Pancake langauge, that plan was scrapped. 
+- Instead, we’ll collect feasible benchmarks from existing suites or develop custom ones.
+
+## Progress
+- So far, we have only ported over the Dijkstra's algorithm benchmark from MiBench.
+
 ## How to run
 ```bash
 mkdir build && cd build

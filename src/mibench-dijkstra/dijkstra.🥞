@@ -30,9 +30,6 @@
 #ifdef ENABLE_PRINT
 #define printf_str(str_ptr) @printf_str(0,str_ptr,0,0)
 #define printf_int(val) @printf_int(0,val,0,0)
-#else
-#define printf_str(str_ptr) 0
-#define printf_int(val) 0
 #endif
 
 fun get_adjmatrix(1 i, 1 j) {

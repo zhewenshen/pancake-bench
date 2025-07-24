@@ -1,0 +1,63 @@
+name: cross compile riscv
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  cross-riscv:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake gcc-riscv64-linux-gnu
+    
+    - name: extract and build cake compiler
+      run: |
+        tar -xzf cake-unverified-x64-64.tar.gz
+        cd cake-unverified-x64-64
+        make cake
+        sudo cp cake /usr/local/bin/cake
+        cd ..
+    
+    - name: create riscv toolchain file
+      run: |
+        cat > riscv64-linux-gnu.cmake << 'EOF'
+        set(CMAKE_SYSTEM_NAME Linux)
+        set(CMAKE_SYSTEM_PROCESSOR riscv64)
+        
+        set(CMAKE_C_COMPILER riscv64-linux-gnu-gcc)
+        set(CMAKE_CXX_COMPILER riscv64-linux-gnu-g++)
+        
+        set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+        set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+        EOF
+      
+    - name: configure cmake for riscv cross compile
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE=../riscv64-linux-gnu.cmake ..
+    
+    - name: build c version for riscv
+      run: |
+        cd build
+        make dijkstra-c
+    
+    - name: build pancake version for riscv
+      run: |
+        cd build
+        make dijkstra-pancake
+    
+    - name: verify riscv binaries
+      run: |
+        cd build/bin/network/dijkstra
+        file dijkstra-c dijkstra-pancake
+        echo -e "\033[32msuccess: riscv cross compilation completed\033[0m"

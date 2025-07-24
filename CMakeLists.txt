@@ -116,7 +116,7 @@ function(add_benchmark_executable target_name)
         
         add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_pancake.o
-            COMMAND ${CMAKE_C_COMPILER} -c -mcpu=cortex-a53 ${PANCAKE_ASM} -o ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_pancake.o
+            COMMAND ${CMAKE_C_COMPILER} -c ${PANCAKE_ASM} -o ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_pancake.o
             DEPENDS ${PANCAKE_ASM}
             COMMENT "Assembling Pancake code for ${target_name}"
         )

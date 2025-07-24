@@ -35,24 +35,24 @@ jobs:
     - name: build c version
       run: |
         cd build
-        make dijkstra-c
+        make mibench-dijkstra-c
     
     - name: build pancake version
       run: |
         cd build
-        make dijkstra-pancake
+        make mibench-dijkstra-pancake
     
     - name: test c version runs
       run: |
         cd build/bin/network/dijkstra
-        timeout 30 ./dijkstra-c input.dat > c_output.txt
+        timeout 30 ./mibench-dijkstra-c input.dat > c_output.txt
         echo "c version completed successfully"
         echo "output lines: $(wc -l < c_output.txt)"
     
     - name: test pancake version runs
       run: |
         cd build/bin/network/dijkstra
-        timeout 30 ./dijkstra-pancake input.dat > pancake_output.txt
+        timeout 30 ./mibench-dijkstra-pancake input.dat > pancake_output.txt
         echo "pancake version completed successfully"
         echo "output lines: $(wc -l < pancake_output.txt)"
     
@@ -77,11 +77,11 @@ jobs:
       run: |
         cd build
         cmake -DCMAKE_C_FLAGS="" ..
-        make dijkstra-c dijkstra-pancake
+        make mibench-dijkstra-c mibench-dijkstra-pancake
     
     - name: test silent mode runs
       run: |
-        cd build/bin/network/dijkstra
-        timeout 30 ./dijkstra-c input.dat
-        timeout 30 ./dijkstra-pancake input.dat
+        cd build/bin/mibench-dijkstra
+        timeout 30 ./mibench-dijkstra-c input.dat
+        timeout 30 ./mibench-dijkstra-pancake input.dat
         echo -e "\033[32msuccess: silent mode works for both versions\033[0m"

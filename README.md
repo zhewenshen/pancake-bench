@@ -7,7 +7,7 @@
 ## Progress
 - So far, we have only ported over the Dijkstra's algorithm benchmark from MiBench.
 
-## How to run
+## How to run (TODO)
 ```bash
 mkdir build && cd build
 cmake ..

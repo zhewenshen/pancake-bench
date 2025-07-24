@@ -44,21 +44,21 @@ jobs:
     
     - name: test c version runs
       run: |
-        cd build/bin/network/dijkstra
+        cd build/bin/mibench-dijkstra
         timeout 30 ./mibench-dijkstra-c input.dat > c_output.txt
         echo "c version completed successfully"
         echo "output lines: $(wc -l < c_output.txt)"
     
     - name: test pancake version runs
       run: |
-        cd build/bin/network/dijkstra
+        cd build/bin/mibench-dijkstra
         timeout 30 ./mibench-dijkstra-pancake input.dat > pancake_output.txt
         echo "pancake version completed successfully"
         echo "output lines: $(wc -l < pancake_output.txt)"
     
     - name: verify outputs match
       run: |
-        cd build/bin/network/dijkstra
+        cd build/bin/mibench-dijkstra
         echo "comparing outputs..."
         if diff -u c_output.txt pancake_output.txt; then
           echo -e "\033[32msuccess: c and pancake outputs match perfectly!\033[0m"

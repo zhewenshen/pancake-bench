@@ -48,15 +48,15 @@ jobs:
     - name: build c version for aarch64
       run: |
         cd build
-        make dijkstra-c
+        make mibench-dijkstra-c
     
     - name: build pancake version for aarch64
       run: |
         cd build
-        make dijkstra-pancake
+        make mibench-dijkstra-pancake
     
     - name: verify aarch64 binaries
       run: |
-        cd build/bin/network/dijkstra
-        file dijkstra-c dijkstra-pancake
+        cd build/bin/mibench-dijkstra
+        file mibench-dijkstra-c mibench-dijkstra-pancake
         echo -e "\033[32msuccess: aarch64 cross compilation completed\033[0m"

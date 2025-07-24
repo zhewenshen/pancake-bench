@@ -1,0 +1,87 @@
+name: test build and verify output
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+    
+    - name: extract and build cake compiler
+      run: |
+        tar -xzf cake-unverified-x64-64.tar.gz
+        cd cake-unverified-x64-64
+        make cake
+        sudo cp cake /usr/local/bin/cake
+        cd ..
+      
+    - name: configure cmake with printing enabled
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_C_FLAGS="-DENABLE_PRINT" ..
+    
+    - name: build c version
+      run: |
+        cd build
+        make dijkstra-c
+    
+    - name: build pancake version
+      run: |
+        cd build
+        make dijkstra-pancake
+    
+    - name: test c version runs
+      run: |
+        cd build/bin/network/dijkstra
+        timeout 30 ./dijkstra-c input.dat > c_output.txt
+        echo "c version completed successfully"
+        echo "output lines: $(wc -l < c_output.txt)"
+    
+    - name: test pancake version runs
+      run: |
+        cd build/bin/network/dijkstra
+        timeout 30 ./dijkstra-pancake input.dat > pancake_output.txt
+        echo "pancake version completed successfully"
+        echo "output lines: $(wc -l < pancake_output.txt)"
+    
+    - name: verify outputs match
+      run: |
+        cd build/bin/network/dijkstra
+        echo "comparing outputs..."
+        if diff -u c_output.txt pancake_output.txt; then
+          echo -e "\033[32msuccess: c and pancake outputs match perfectly!\033[0m"
+        else
+          echo -e "\033[31mfailure: outputs differ!\033[0m"
+          echo ""
+          echo "c output (first 5 lines):"
+          head -5 c_output.txt
+          echo ""
+          echo "pancake output (first 5 lines):"
+          head -5 pancake_output.txt
+          exit 1
+        fi
+    
+    - name: test silent mode builds
+      run: |
+        cd build
+        cmake -DCMAKE_C_FLAGS="" ..
+        make dijkstra-c dijkstra-pancake
+    
+    - name: test silent mode runs
+      run: |
+        cd build/bin/network/dijkstra
+        timeout 30 ./dijkstra-c input.dat
+        timeout 30 ./dijkstra-pancake input.dat
+        echo -e "\033[32msuccess: silent mode works for both versions\033[0m"

@@ -1,0 +1,203 @@
+#define pnk_mem_ptr(idx)  (@base + (idx) * @biw)
+#define pnk_mem(idx)      (lds 1 pnk_mem_ptr(idx))
+
+#define NUM_NODES 100
+#define NONE 9999
+
+#ifdef ENABLE_PRINT
+#define STR_SHORTEST_0 pnk_mem(2)
+#define STR_SHORTEST_IS pnk_mem(3)
+#define STR_IN_COST pnk_mem(4)  
+#define STR_PATH_IS pnk_mem(5)
+#define STR_NEWLINE pnk_mem(6)
+#define STR_SPACE pnk_mem(7)
+#endif
+
+#define ADJMATRIX_BASE 1000
+#define RGNNODES_BASE 15000
+#define QUEUE_BASE 17000
+#define MAX_QUEUE_SIZE 10000
+#define QITEM_SIZE 3
+#define QITEM_INODE 0
+#define QITEM_IDIST 1
+#define QITEM_IPREV 2
+#define QUEUE_HEAD_IDX 27000
+#define QUEUE_TAIL_IDX 27001
+#define NODE_SIZE 2
+#define NODE_IDIST 0
+#define NODE_IPREV 1
+
+#ifdef ENABLE_PRINT
+#define printf_str(str_ptr) @printf_str(0,str_ptr,0,0)
+#define printf_int(val) @printf_int(0,val,0,0)
+#else
+#define printf_str(str_ptr) 0
+#define printf_int(val) 0
+#endif
+
+fun get_adjmatrix(1 i, 1 j) {
+    var idx = ADJMATRIX_BASE + (i * NUM_NODES + j);
+    return pnk_mem(idx);
+}
+
+fun get_node_idist(1 idx) {
+    var addr = RGNNODES_BASE + (idx * NODE_SIZE) + NODE_IDIST;
+    return pnk_mem(addr);
+}
+
+fun set_node_idist(1 idx, 1 val) {
+    var addr = RGNNODES_BASE + (idx * NODE_SIZE) + NODE_IDIST;
+    var mem_addr = pnk_mem_ptr(addr);
+    !stw mem_addr, val;
+    return 0;
+}
+
+fun get_node_iprev(1 idx) {
+    var addr = RGNNODES_BASE + (idx * NODE_SIZE) + NODE_IPREV;
+    return pnk_mem(addr);
+}
+
+fun set_node_iprev(1 idx, 1 val) {
+    var addr = RGNNODES_BASE + (idx * NODE_SIZE) + NODE_IPREV;
+    var mem_addr = pnk_mem_ptr(addr);
+    !stw mem_addr, val;
+    return 0;
+}
+
+fun print_path(1 chNode) {
+    var 1 iprev = get_node_iprev(chNode);
+    if (iprev != NONE) {
+        print_path(iprev);
+    }
+#ifdef ENABLE_PRINT
+    printf_str(STR_SPACE);
+    printf_int(chNode);
+#endif
+    return 0;
+}
+
+fun get_queue_item(1 idx, 1 field) {
+    var addr = QUEUE_BASE + (idx * QITEM_SIZE) + field;
+    return pnk_mem(addr);
+}
+
+fun set_queue_item(1 idx, 1 field, 1 value) {
+    var addr = QUEUE_BASE + (idx * QITEM_SIZE) + field;
+    var mem_addr = pnk_mem_ptr(addr);
+    !stw mem_addr, value;
+    return 0;
+}
+
+fun enqueue(1 iNode, 1 iDist, 1 iPrev) {
+    var tail = pnk_mem(QUEUE_TAIL_IDX);
+    var head = pnk_mem(QUEUE_HEAD_IDX);
+    var next_tail = tail + 1;
+    if (next_tail >= MAX_QUEUE_SIZE) {
+        next_tail = 0;
+    }
+    set_queue_item(tail, QITEM_INODE, iNode);
+    set_queue_item(tail, QITEM_IDIST, iDist);
+    set_queue_item(tail, QITEM_IPREV, iPrev);
+    var tail_addr = pnk_mem_ptr(QUEUE_TAIL_IDX);
+    !stw tail_addr, next_tail;
+    return 0;
+}
+
+fun dequeue() {
+    var head = pnk_mem(QUEUE_HEAD_IDX);
+    var tail = pnk_mem(QUEUE_TAIL_IDX);
+    if (head == tail) {
+        return <0, 0, 0, 0>;
+    }
+    var 1 iNode = get_queue_item(head, QITEM_INODE);
+    var 1 iDist = get_queue_item(head, QITEM_IDIST);
+    var 1 iPrev = get_queue_item(head, QITEM_IPREV);
+    var next_head = head + 1;
+    if (next_head >= MAX_QUEUE_SIZE) {
+        next_head = 0;
+    }
+    var head_addr = pnk_mem_ptr(QUEUE_HEAD_IDX);
+    !stw head_addr, next_head;
+    return <1, iNode, iDist, iPrev>;
+}
+
+fun qcount() {
+    var head = pnk_mem(QUEUE_HEAD_IDX);
+    var tail = pnk_mem(QUEUE_TAIL_IDX);
+    if (tail >= head) {
+        return tail - head;
+    } else {
+        return MAX_QUEUE_SIZE - head + tail;
+    }
+}
+
+fun dijkstra(1 chStart, 1 chEnd) {
+    var head_addr = pnk_mem_ptr(QUEUE_HEAD_IDX);
+    var tail_addr = pnk_mem_ptr(QUEUE_TAIL_IDX);
+    !stw head_addr, 0;
+    !stw tail_addr, 0;
+    var ch = 0;
+    while (ch < NUM_NODES) {
+        set_node_idist(ch, NONE);
+        set_node_iprev(ch, NONE);
+        ch = ch + 1;
+    }
+    if (chStart == chEnd) {
+#ifdef ENABLE_PRINT
+        printf_str(STR_SHORTEST_0);
+#endif
+        return 0;
+    }
+    set_node_idist(chStart, 0);
+    set_node_iprev(chStart, NONE);
+    enqueue(chStart, 0, NONE);
+    var 1 count = qcount();
+    while (count > 0) {
+        var {1,1,1,1} result = dequeue();
+        var valid = result.0;
+        var iNode = result.1;
+        var iDist = result.2;
+        var iPrev = result.3;
+        var i = 0;
+        while (i < NUM_NODES) {
+            var 1 iCost = get_adjmatrix(iNode, i);
+            if (iCost != NONE) {
+                var 1 curr_dist = get_node_idist(i);
+                var new_dist = iDist + iCost;
+                if ((curr_dist == NONE) | (curr_dist > new_dist)) {
+                    set_node_idist(i, new_dist);
+                    set_node_iprev(i, iNode);
+                    enqueue(i, new_dist, iNode);
+                }
+            }
+            i = i + 1;
+        }
+        count = qcount();
+    }
+    var 1 final_dist = get_node_idist(chEnd);
+#ifdef ENABLE_PRINT
+    printf_str(STR_SHORTEST_IS);
+    printf_int(final_dist);
+    printf_str(STR_IN_COST);
+    printf_str(STR_PATH_IS);
+    print_path(chEnd);
+    printf_str(STR_NEWLINE);
+#endif
+    return 0;
+}
+
+export fun dijkstra_main() {
+    var i = 0;
+    var j = 50;
+    var count = 0;
+    while (count < 100) {
+        if (j >= NUM_NODES) {
+            j = j - NUM_NODES;
+        }
+        dijkstra(i, j);
+        i = i + 1;
+        j = j + 1;
+        count = count + 1;
+    }
+    return 0;
+}

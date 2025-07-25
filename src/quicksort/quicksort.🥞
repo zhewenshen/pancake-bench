@@ -1,0 +1,104 @@
+#define pnk_mem_ptr(idx)  (@base + (idx) * @biw)
+#define pnk_mem(idx)      (lds 1 pnk_mem_ptr(idx))
+
+#define ARRAY_SIZE_IDX 0
+#define ARRAY_BASE_IDX 1
+#define NITER_IDX 2
+#define CALL_COUNT_IDX 3
+#define ARRAY_STORAGE_BASE 1000
+
+fun get_array_element(1 idx) {
+    var array_base = pnk_mem(ARRAY_BASE_IDX);
+    var element_addr = array_base + (idx * 4);
+    var value = 0;
+    !ld32 value, element_addr;
+    return value;
+}
+
+fun set_array_element(1 idx, 1 value) {
+    var array_base = pnk_mem(ARRAY_BASE_IDX);
+    var element_addr = array_base + (idx * 4);
+    !st32 element_addr, value;
+    return 0;
+}
+
+fun quicksort(1 lo, 1 hi) {
+    var current_count = pnk_mem(CALL_COUNT_IDX);
+    current_count = current_count + 1;
+    var call_count_ptr = pnk_mem_ptr(CALL_COUNT_IDX);
+    !stw call_count_ptr, current_count;
+    
+    if (lo < hi) {
+        var i = lo;
+        var j = hi;
+        var 1 pivot = get_array_element(hi);
+        
+        while (i < j) {
+            var loop_i = 1;
+            while (loop_i) {
+                if (i < hi) {
+                    var 1 val_i = get_array_element(i);
+                    if (val_i <= pivot) {
+                        i = i + 1;
+                    } else {
+                        loop_i = 0;
+                    }
+                } else {
+                    loop_i = 0;
+                }
+            }
+            
+            var loop_j = 1;
+            while (loop_j) {
+                if (j > lo) {
+                    var 1 val_j = get_array_element(j);
+                    if (val_j >= pivot) {
+                        j = j - 1;
+                    } else {
+                        loop_j = 0;
+                    }
+                } else {
+                    loop_j = 0;
+                }
+            }
+            
+            if (i < j) {
+                var 1 temp_i = get_array_element(i);
+                var 1 temp_j = get_array_element(j);
+                set_array_element(i, temp_j);
+                set_array_element(j, temp_i);
+            }
+        }
+        
+        var 1 final_i = get_array_element(i);
+        var 1 final_hi = get_array_element(hi);
+        set_array_element(i, final_hi);
+        set_array_element(hi, final_i);
+        quicksort(lo, i - 1);
+        quicksort(i + 1, hi);
+    }
+    return 0;
+}
+
+export fun quicksort_main() {
+    var n = pnk_mem(ARRAY_SIZE_IDX);
+    var niter = pnk_mem(NITER_IDX);
+    
+    var call_count_ptr = pnk_mem_ptr(CALL_COUNT_IDX);
+    !stw call_count_ptr, 0;
+    
+    var iter = 0;
+    while (iter < niter) {
+        quicksort(0, n - 1);
+        iter = iter + 1;
+        
+        if (iter < niter) {
+            @reset_array(0,0,0,0);
+        }
+    }
+    
+    var total_calls = pnk_mem(CALL_COUNT_IDX);
+    @print_call_count(total_calls,0,0,0);
+    
+    return 0;
+}
